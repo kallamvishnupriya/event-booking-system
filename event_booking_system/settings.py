@@ -7,6 +7,10 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+import pymysql
+pymysql.install_as_MySQLdb()
+
+
 # ======================
 # SECURITY SETTINGS
 # ======================
