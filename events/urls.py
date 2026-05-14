@@ -1,5 +1,4 @@
 from django.urls import path
-
 from .views import (
     get_events,
     create_event,
@@ -9,13 +8,9 @@ from .views import (
 )
 
 urlpatterns = [
-    path('events/', get_events),
-
-    path('events/create/', create_event),
-
-    path('events/update/<int:id>/', update_event),
-
-    path('events/delete/<int:id>/', delete_event),
-
-    path('events/soldout/<int:id>/', toggle_sold_out),
+    path('', get_events),  # ✅ /api/events/
+    path('create/', create_event),  # ✅ /api/events/create/
+    path('update/<int:id>/', update_event),
+    path('delete/<int:id>/', delete_event),
+    path('soldout/<int:id>/', toggle_sold_out),
 ]

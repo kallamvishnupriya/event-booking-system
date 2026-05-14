@@ -3,7 +3,6 @@ from .models import Booking
 
 
 class BookingSerializer(serializers.ModelSerializer):
-
     event_title = serializers.CharField(
         source='event.title',
         read_only=True

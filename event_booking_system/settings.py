@@ -13,9 +13,9 @@ pymysql.install_as_MySQLdb()
 # SECURITY
 # ======================
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = "django-insecure-8z3x!@9k0f4b5c1v7x2m9p6l8n0q1r3s5t7u"
 
-DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+DEBUG = True
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
 
-    'users',
+    'users.apps.UsersConfig',
     'events',
     'bookings',
 ]
@@ -69,14 +69,11 @@ ROOT_URLCONF = 'event_booking_system.urls'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DB_USER"),
-        'PASSWORD': os.getenv("DB_PASSWORD"),
-        'HOST': os.getenv("DB_HOST"),
-        'PORT': os.getenv("DB_PORT"),
-        'OPTIONS': {
-            'ssl': {'ssl-mode': 'REQUIRED'}
-        }
+        'NAME': 'event_booking',
+        'USER': 'root',
+        'PASSWORD': 'vishnu@2888',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
     }
 }
 

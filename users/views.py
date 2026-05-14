@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import status
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -15,52 +16,54 @@ def register(request):
 
     username = request.data.get("username")
     password = request.data.get("password")
-    role = request.data.get("role", "customer")
+    role = request.data.get("role", "customer").lower()
 
-    # prevent public manager creation
+    # ❌ prevent manager creation from frontend
     if role == "manager":
         return Response(
             {"error": "Manager role not allowed"},
-            status=403
+            status=status.HTTP_403_FORBIDDEN
         )
 
     # validation
     if not username or not password:
         return Response(
             {"error": "Username and password required"},
-            status=400
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-    # duplicate user check
+    if role not in ["customer", "organizer"]:
+        return Response(
+            {"error": "Invalid role"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # duplicate check
     if User.objects.filter(username=username).exists():
         return Response(
             {"error": "User already exists"},
-            status=400
+            status=status.HTTP_400_BAD_REQUEST
         )
 
     try:
-        # create auth user
         user = User.objects.create_user(
             username=username,
             password=password
         )
 
-        # create profile
-        UserProfile.objects.create(
-            user=user,
-            role=role
-        )
+        # ✅ SET ROLE PROPERLY
+        profile = user.userprofile
+        profile.role = role
+        profile.save()
 
         return Response({
             "message": "User registered successfully"
-        })
+        }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
-        print(e)
-
         return Response(
             {"error": str(e)},
-            status=500
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
@@ -71,31 +74,26 @@ def login(request):
     username = request.data.get("username")
     password = request.data.get("password")
 
-    user = authenticate(
-        username=username,
-        password=password
-    )
+    user = authenticate(username=username, password=password)
 
     if user is not None:
 
         refresh = RefreshToken.for_user(user)
 
-        # default role
-        role = "customer"
-
-        # safely get profile role
+        # ✅ USE UserProfile ROLE (single source of truth)
         try:
             role = user.userprofile.role
-        except:
-            pass
+        except UserProfile.DoesNotExist:
+            role = "customer"
 
         return Response({
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "role": role
+            "role": role,
+            "username": user.username
         })
 
     return Response(
         {"error": "Invalid credentials"},
-        status=400
+        status=status.HTTP_400_BAD_REQUEST
     )

@@ -1,8 +1,12 @@
+from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
 
 from .models import Booking
+from .serializers import BookingSerializer
 from events.models import Event
 
 
@@ -11,43 +15,55 @@ from events.models import Event
 @permission_classes([IsAuthenticated])
 def book_event(request):
 
+    user = request.user
+
+    # ✅ ROLE CHECK (RBAC)
+    if hasattr(user, 'role') and user.role not in ['customer', 'organizer', 'manager']:
+        return Response(
+            {"error": "You are not allowed to book events"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
     event_id = request.data.get("event_id")
 
-    try:
-        event = Event.objects.get(id=event_id)
-    except:
+    if not event_id:
         return Response(
-            {"error": "Event not found"},
-            status=404
+            {"error": "event_id is required"},
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-    # 🔥 SOLD OUT CHECK
-    if event.is_sold_out:
-        return Response(
-            {"error": "Event is sold out"},
-            status=400
+    event = get_object_or_404(Event, id=event_id)
+
+    with transaction.atomic():
+
+        # 🔥 SOLD OUT CHECK
+        if event.is_sold_out:
+            return Response(
+                {"error": "Event is sold out"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 🔥 PREVENT DOUBLE BOOKING
+        if Booking.objects.filter(user=user, event=event).exists():
+            return Response(
+                {"error": "Already booked"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        booking = Booking.objects.create(
+            user=user,
+            event=event
         )
 
-    # already booked
-    already_booked = Booking.objects.filter(
-        user=request.user,
-        event=event
-    ).exists()
+    serializer = BookingSerializer(booking)
 
-    if already_booked:
-        return Response(
-            {"error": "Already booked"},
-            status=400
-        )
-
-    Booking.objects.create(
-        user=request.user,
-        event=event
+    return Response(
+        {
+            "message": "Booked successfully",
+            "data": serializer.data
+        },
+        status=status.HTTP_201_CREATED
     )
-
-    return Response({
-        "message": "Booked successfully"
-    })
 
 
 # ---------------- MY BOOKINGS ----------------
@@ -55,16 +71,10 @@ def book_event(request):
 @permission_classes([IsAuthenticated])
 def my_bookings(request):
 
-    bookings = Booking.objects.filter(user=request.user)
+    user = request.user
 
-    data = []
+    bookings = Booking.objects.filter(user=user).select_related('event')
 
-    for b in bookings:
+    serializer = BookingSerializer(bookings, many=True)
 
-        data.append({
-            "id": b.id,
-            "event_title": b.event.title,
-            "booked_at": b.booked_at
-        })
-
-    return Response(data)
+    return Response(serializer.data, status=status.HTTP_200_OK)
