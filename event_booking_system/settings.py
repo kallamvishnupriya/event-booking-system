@@ -20,7 +20,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
-    ".onrender.com"
+    ".railway.app"
 ]
 
 # ======================
@@ -65,18 +65,14 @@ ROOT_URLCONF = 'event_booking_system.urls'
 # ======================
 # DATABASE (AIVEN MYSQL FIXED)
 # ======================
+import dj_database_url
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'event_booking',
-        'USER': 'root',
-        'PASSWORD': 'vishnu@2888',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-    }
+    'default': dj_database_url.config(
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+        conn_max_age=600
+    )
 }
-
 # ======================
 # TEMPLATES
 # ======================
