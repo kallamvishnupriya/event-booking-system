@@ -23,6 +23,10 @@ ALLOWED_HOSTS = [
     ".railway.app"
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://web-production-77024.up.railway.app"
+]
+
 # ======================
 # APPS
 # ======================
@@ -130,10 +134,11 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://your-frontend.vercel.app"
+    "https://your-frontend.vercel.app",
+    "https://web-production-77024.up.railway.app"
 ]
 
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
 
 # ======================
 # DRF
